@@ -1,6 +1,7 @@
 import random
 import sys
 
+# This method can be tweaked for testing
 def dice(n): # Returns n dice numbers (totally random) - tested
     return [random.randint(1, 6) for i in range(n)]
 
@@ -32,24 +33,24 @@ class Player:
         else:
             return (True, False) # Scored points, and there are 3 or more dice to play with - recomment roll again.
 
-    def turn(self):
+    def turn(self, verbose=False):
         self.temp_score = 0
         roll = dice(6)
-        print('Player %s: rolled ' % self.name + str(roll))
+        if verbose:print('Player %s: rolled ' % self.name + str(roll))
         self.keeping = []
 
         roll_again, fail = self.process_roll(roll)
         if fail:
-            print('     - %s: No points this roll, total score: ' % self.name + str(self.score))
+            if verbose:print('     - %s: No points this roll, total score: ' % self.name + str(self.score))
             self.temp_score = 0
         elif roll_again:
             while roll_again:
-                print('     - %s: Keeping ' % self.name + str(self.keeping) + ' for temp_score of ' + str(self.temp_score) + ', total score: ' + str(self.score))
+                if verbose:print('     - %s: Keeping ' % self.name + str(self.keeping) + ' for temp_score of ' + str(self.temp_score) + ', total score: ' + str(self.score))
                 roll = dice(6 - len(self.keeping))
-                print('     - %s: rolled ' % self.name + str(roll))
+                if verbose:print('     - %s: rolled ' % self.name + str(roll))
                 roll_again, fail = self.process_roll(roll)
                 if fail:
-                    print('     - %s: No points this roll, total score: ' % self.name + str(self.score))
+                    if verbose:print('     - %s: No points this roll, total score: ' % self.name + str(self.score))
                     self.temp_score = 0
                 # Otherwise, roll_again determines how many times this loop runs
 
@@ -57,13 +58,19 @@ class Player:
 
 
 
+def score_player(player, n_rounds):
+    for i in range(n_rounds):
+        p.turn()
+
+    return(p.score/float(n_rounds))
+
 
 
 # print(dice(50))
 
 p = Player('test')
-for i in range(5):
-    p.turn()
-    print(p.score)
-    print(p.keeping)
-    print(p.temp_score)
+score = score_player(p, 20)
+print(score)
+
+p.score = 0
+p.turn(verbose=True)
