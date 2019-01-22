@@ -111,12 +111,8 @@ class BasicPlayer:
 
 
 class AllRules(BasicPlayer):
-    def process_roll(self, roll):
-        # Knows temp score, score and current roll. Adds dice to self.keeping and optionally rolls again.
-        # Returns: (roll_again (bool), fail (bool - true if no points scored))
-        # Go through dice looking for high scoring patterns << Add patterns
-        self.kept = 0 # How many dice kept (must be at least 1 else turn ends)
 
+    def pull_highs(self, roll):
         # 2 3OAKS
         if test_for_23s(roll):
             for d in roll:
@@ -140,7 +136,9 @@ class AllRules(BasicPlayer):
                 roll.remove(d)
                 self.kept += 1
                 self.temp_score += 1500
+        return roll
 
+    def pull_3oak(self, roll):
         # 3oak:
         thr, num = test_for_3oak(roll)
         if thr:
@@ -157,6 +155,18 @@ class AllRules(BasicPlayer):
                 self.kept += 1
                 s = s*2
             self.temp_score += s
+        return roll
+
+
+    def process_roll(self, roll):
+        # Knows temp score, score and current roll. Adds dice to self.keeping and optionally rolls again.
+        # Returns: (roll_again (bool), fail (bool - true if no points scored))
+        # Go through dice looking for high scoring patterns << Add patterns
+        self.kept = 0 # How many dice kept (must be at least 1 else turn ends)
+
+        roll = self.pull_highs(roll)
+
+        roll = self.pull_3oak(roll)
 
 
         # 1s and 5s:
@@ -180,6 +190,49 @@ class AllRules(BasicPlayer):
         else:
             return (True, False) # Scored points, and there are 3 or more dice to play with - recomment roll again.
 
+class AllRulesThreshForThreeOne(AllRules):
+
+    def __init__(self, name, thresh3, thresh1):
+        self.name = name
+        self.score = 0
+        self.temp_score = 0
+        self.keeping = []
+        self.thresh3 = thresh3
+        self.thresh1 = thresh1
+
+    def process_roll(self, roll):
+        self.kept = 0
+
+        roll = self.pull_highs(roll)
+
+        roll = self.pull_3oak(roll)
+
+
+        # 1s and 5s:
+        for d in roll:
+            if d == 1:
+                self.keeping.append(1)
+                self.kept += 1
+                self.temp_score += 100
+            if d == 5:
+                self.keeping.append(5)
+                self.kept += 1
+                self.temp_score += 50
+
+
+        if (self.kept) == 0:
+            return (False, True) # Scored no points this roll
+        if len(self.keeping) == 6:
+            return (True, False) # Used all 6 dice - must roll again
+        elif len(self.keeping) == 5 and self.temp_score > self.thresh1:
+            return (True, False) # One dice left - risk it for the brisket
+        elif len(self.keeping) > 3:
+            return (False, False) # Scored points, 2 or fewer dice remain (so don't roll again)
+        elif len(self.keeping) == 3 and self.temp_score > self.thresh3:
+            return (False, False) # Don't roll with 3 left if score is above thresh
+        else:
+            return (True, False) # Scored points, and there are 3 or more dice to play with - recomment roll again.
+
 
 
 def score_player(player, n_rounds):
@@ -189,29 +242,21 @@ def score_player(player, n_rounds):
     return(player.score/float(n_rounds))
 
 
+# p4 = AllRules('All Rules')
+# score = score_player(p4, 20000)
+# print(score)
 
-# print(dice(50))
 
-p = BasicPlayer('test')
-score = score_player(p, 20000)
-print('Keep 1s and 5s one turn:', score)
 
-# p.score = 0
-# p.turn(verbose=True)
+# for t in [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]:
+#     p5 = AllRulesThreshForThree('3thresh', t)
+#     score = score_player(p5, 200000)
+#     print(score)
 
-p2 = ThreeOAKBasic('test2')
-# for i in range(5):
-#     p2.turn(verbose=True)
-score = score_player(p2, 20000)
-print('All score (keep everything) one hand', score)
 
-p3 = ThreeOAKBasicG2('test3')
-score = score_player(p3, 20000)
-print(score)
+# for t in [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]:
+#     p5 = AllRulesThreshForThreeOne('3thresh', 500, t)
+#     score = score_player(p5, 20000)
+#     print(score)
 
-p4 = AllRules('All Rules')
-score = score_player(p4, 20000)
-print(score)
-
-# for i in range(30):
-#     p4.turn(verbose = True)
+p6 =
